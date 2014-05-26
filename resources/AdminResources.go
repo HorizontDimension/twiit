@@ -10,7 +10,7 @@ import (
 	"labix.org/v2/mgo/bson"
 
 	"github.com/emicklei/go-restful"
-	"twiit/models"
+	"github.com/HorizontDimension/twiit/models"
 )
 
 type Admin struct {

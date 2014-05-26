@@ -5,8 +5,8 @@ import (
 	"github.com/emicklei/go-restful"
 	"labix.org/v2/mgo"
 	"net/http"
-	"twiit"
-	"twiit/models"
+	"github.com/HorizontDimension/twiit"
+	"github.com/HorizontDimension/twiit/models"
 	//"twiit/utils"
 
 	"log"

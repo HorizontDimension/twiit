@@ -8,7 +8,7 @@ import (
 	"labix.org/v2/mgo/bson"
 	"strings"
 	"time"
-	"twiit/utils"
+	"github.com/HorizontDimension/twiit/utils"
 )
 
 const (

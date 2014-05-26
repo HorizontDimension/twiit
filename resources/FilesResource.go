@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"github.com/emicklei/go-restful"
-	"twiit/models"
+	"github.com/HorizontDimension/twiit/models"
 )
 
 type File struct {

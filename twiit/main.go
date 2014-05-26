@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"twiit/resources"
+	"github.com/HorizontDimension/twiit/resources"
 
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful/swagger"
