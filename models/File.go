@@ -4,6 +4,7 @@ import (
 	//"io"
 	"github.com/nfnt/resize"
 
+	"github.com/HorizontDimension/twiit"
 	"image"
 	"image/jpeg"
 	_ "image/jpeg"
@@ -39,21 +40,21 @@ func AddImage(s *mgo.Session, name string, fhs []*multipart.FileHeader, fileId b
 	for i := 0; i < len(fhs); i++ {
 		f, err := fhs[i].Open()
 		if err != nil {
+			twiit.Log.Error("Failed to open multipart", "error", err)
 			return err
 		}
-		defer f.Close()
 
 		img, _, err := image.Decode(f)
 		if err != nil {
+			twiit.Log.Error("Failed to decode image", "error", err)
 			return err
 		}
 
 		gridfile, err := FilesFs(s).Create("")
 		if err != nil {
-
+			twiit.Log.Error("Failed to create gridfile", "error", err)
 			return err
 		}
-		defer gridfile.Close()
 
 		gridfile.SetId(fileId)
 		gridfile.SetContentType(fhs[0].Header.Get("Content-Type"))
@@ -64,7 +65,20 @@ func AddImage(s *mgo.Session, name string, fhs []*multipart.FileHeader, fileId b
 
 		//please handle error ws notification
 		if err != nil {
+			twiit.Log.Error("Failed to encode image", "error", err)
 
+			return err
+		}
+
+		err = gridfile.Close()
+		if err != nil {
+			twiit.Log.Error("Failed to close gridfile", "error", err)
+			return err
+		}
+
+		err = f.Close()
+		if err != nil {
+			twiit.Log.Error("Failed to close multipart file", "error", err)
 			return err
 		}
 

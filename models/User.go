@@ -1,14 +1,15 @@
 package models
 
 import (
-	"code.google.com/p/go.crypto/bcrypt"
-	"fmt"
-
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
+	//"fmt"
 	"strings"
 	"time"
+
+	"code.google.com/p/go.crypto/bcrypt"
+	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/utils"
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 )
 
 const (
@@ -53,9 +54,9 @@ type User struct {
 	PassConfirm string `bson:"-" json:"-"`
 }
 
-func (user *User) String() string {
-	return fmt.Sprintf("%s %s", user.Firstname, user.Lastname)
-}
+//func (user *User) String() string {
+//	return fmt.Sprintf("%s %s", user.Firstname, user.Lastname)
+//}
 
 //func (user *User) Validate(v *revel.Validation) {
 //	v.Required((user).Firstname).Key("user.Firstname")
@@ -92,6 +93,7 @@ func (user *User) Save(s *mgo.Session) error {
 	}
 	err := UserCol(s).EnsureIndex(index)
 	if err != nil {
+		twiit.Log.Error("Failed to Ensure database index ", "error", err)
 		return err
 
 	}
@@ -117,9 +119,10 @@ func (user *User) Save(s *mgo.Session) error {
 
 	_, err = UserCol(s).Upsert(bson.M{"_id": user.Id}, user)
 	if err != nil {
-		return fmt.Errorf("Unable to save user account: %v error %v", user, err)
+		twiit.Log.Error("Unable to save user account", "user", user, "error", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func UserCol(s *mgo.Session) *mgo.Collection {
@@ -128,7 +131,11 @@ func UserCol(s *mgo.Session) *mgo.Collection {
 
 func GetUserByObjectId(s *mgo.Session, Id bson.ObjectId) *User {
 	u := new(User)
-	UserCol(s).FindId(Id).One(u)
+	err := UserCol(s).FindId(Id).One(u)
+	if err != nil {
+		twiit.Log.Error("Error on GetUserByObjectId", "error", err)
+	}
+
 	return u
 }
 
@@ -143,19 +150,28 @@ func GetUserById(s *mgo.Session, Id string) *User {
 
 func GetUserByPhone(s *mgo.Session, phoneNumber string) *User {
 	u := new(User)
-	UserCol(s).Find(bson.M{"PhoneNumber": phoneNumber}).One(u)
+	err := UserCol(s).Find(bson.M{"PhoneNumber": phoneNumber}).One(u)
+	if err != nil {
+		twiit.Log.Error("Error on GetUserByPhone", "error", err)
+	}
 	return u
 }
 
 func GetUserByEmail(s *mgo.Session, email string) *User {
 	u := new(User)
-	UserCol(s).Find(bson.M{"email": email}).One(u)
+	err := UserCol(s).Find(bson.M{"email": email}).One(u)
+	if err != nil {
+		twiit.Log.Error("Error on GetUserByEmail", "error", err)
+	}
 	return u
 }
 
 func GetAllPromotors(s *mgo.Session) (p []*User) {
 	p = []*User{}
-	UserCol(s).Find(bson.M{"role": UserPromotor}).Select(bson.M{"firstname": 1, "lasttname": 1}).All(&p)
+	err := UserCol(s).Find(bson.M{"role": UserPromotor}).Select(bson.M{"firstname": 1, "lasttname": 1}).All(&p)
+	if err != nil {
+		twiit.Log.Error("Error on GetAllPromotors", "error", err)
+	}
 	return p
 }
 
@@ -187,7 +203,10 @@ func FindUser(s *mgo.Session, query string, role uint8, limit int) []*User {
 		}}
 	}
 
-	_ = UserCol(s).Find(Query).Limit(limit).All(u)
+	err := UserCol(s).Find(Query).Limit(limit).All(u)
+	if err != nil {
+		twiit.Log.Error("Error on FinUser", "error", err)
+	}
 
 	return *u
 }
@@ -217,7 +236,8 @@ func FindUsersPaginate(s *mgo.Session, role uint8, query string, page int, docum
 
 	totalDocuments, err := UserCol(s).Find(Query).Count()
 	if err != nil {
-		return nil, totalPages
+		twiit.Log.Error("Error counting total documents", "error", err)
+		return nil, totalDocuments
 	}
 	if totalDocuments%documentsPerPage != 0 {
 		totalPages = totalDocuments/documentsPerPage + 1
@@ -234,6 +254,7 @@ func FindUsersPaginate(s *mgo.Session, role uint8, query string, page int, docum
 
 	err = UserCol(s).Find(Query).Limit(documentsPerPage).Skip(skip).All(&u)
 	if err != nil {
+		twiit.Log.Error("Error counting total documents", "error", err)
 		return nil, totalPages
 	}
 

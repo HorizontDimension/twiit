@@ -9,8 +9,9 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 
-	"github.com/emicklei/go-restful"
+	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/models"
+	"github.com/emicklei/go-restful"
 )
 
 type Admin struct {
@@ -74,7 +75,10 @@ func (u *Admin) GetAllAdmins(request *restful.Request, response *restful.Respons
 func (u *Admin) GetAdmin(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("user-id")
 	user := models.GetUserById(u.Session, id)
-	response.WriteEntity(user)
+	err := response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error write entity on GetAdmin ", "error", err)
+	}
 }
 
 //+admin
@@ -85,14 +89,20 @@ func (u *Admin) CreateAdmin(request *restful.Request, response *restful.Response
 	err := request.ReadEntity(&user)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err := response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error response.WriteErrorString on CreateAdmin  ", "error", err)
+		}
 		return
 	}
 
 	if exists := models.GetUserByEmail(u.Session, user.Email); exists.Email == user.Email {
 		msg := fmt.Sprint("Account with ", user.Email, " already exists.")
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusBadRequest, msg)
+		err := response.WriteErrorString(http.StatusBadRequest, msg)
+		if err != nil {
+			twiit.Log.Error("Error response.WriteErrorString on CreateAdmin  ", "error", err)
+		}
 		return
 	}
 
@@ -101,12 +111,18 @@ func (u *Admin) CreateAdmin(request *restful.Request, response *restful.Response
 	err = user.Save(u.Session)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err := response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error response.WriteErrorString on CreateAdmin  ", "error", err)
+		}
 		return
 	}
 
 	response.WriteHeader(http.StatusCreated)
-	response.WriteEntity(user)
+	err = response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error response.WriteEntity on CreateAdmin  ", "error", err)
+	}
 }
 
 //+admin || self promotor
@@ -123,7 +139,10 @@ func (u *Admin) UpdateAdmin(request *restful.Request, response *restful.Response
 	if exists := models.GetUserByEmail(u.Session, user.Email); exists.Email == user.Email && exists.Id != user.Id {
 		msg := fmt.Sprint("Account with ", user.Email, " already exists.")
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusBadRequest, msg)
+		err := response.WriteErrorString(http.StatusBadRequest, msg)
+		if err != nil {
+			twiit.Log.Error("Error response.WriteErrorString on UpdateAdmin  ", "error", err)
+		}
 
 		return
 	}

@@ -8,8 +8,8 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 
-	"github.com/emicklei/go-restful"
 	"github.com/HorizontDimension/twiit/models"
+	"github.com/emicklei/go-restful"
 )
 
 type Guest struct {
@@ -38,7 +38,7 @@ func buildSearchFromUsers(users []*models.User) (results []models.SearchResult) 
 			result.Image = user.Thumb.Hex()
 		}
 		result.Url = "/#/users/read/" + user.Id.Hex()
-		result.Value = user.String()
+		result.Value = user.Firstname + " " + user.Lastname
 		results = append(results, result)
 	}
 

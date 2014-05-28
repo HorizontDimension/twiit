@@ -4,12 +4,13 @@ import (
 	"log"
 	"strings"
 	"time"
-	"unsafe"
+	//"unsafe"
 
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 
-	"twiit/utils"
+	"github.com/HorizontDimension/twiit"
+	"github.com/HorizontDimension/twiit/utils"
 )
 
 func EventCol(s *mgo.Session) *mgo.Collection {
@@ -41,7 +42,7 @@ func (e *Events) HasGuestlist(s *mgo.Session, owner bson.ObjectId) (event *Event
 	query := bson.M{"_id": e.Id, "guestlist": bson.M{"$elemMatch": bson.M{"owner": owner}}}
 	err := EventCol(s).Find(query).One(event)
 	if err != nil {
-
+		twiit.Log.Error("failed to find guestlist", "error", err, "query", query)
 	}
 	return event
 }
@@ -86,6 +87,7 @@ func (e *Events) Save(s *mgo.Session) error {
 	}
 	err := EventCol(s).EnsureIndex(index)
 	if err != nil {
+		twiit.Log.Error("Failed to Ensure database index ", "error", err)
 		return err
 	}
 
@@ -113,13 +115,19 @@ func GetEventById(s *mgo.Session, Id string) *Events {
 
 func GetEventByObjectId(s *mgo.Session, Id bson.ObjectId) *Events {
 	u := new(Events)
-	EventCol(s).FindId(Id).One(u)
+	err := EventCol(s).FindId(Id).One(u)
+	if err != nil {
+		twiit.Log.Error("Error on GetEventByObjectId", "error", err)
+	}
 	return u
 }
 
 func GetAllEvents(s *mgo.Session) []*Events {
 	events := []*Events{}
-	EventCol(s).Find(nil).All(&events)
+	err := EventCol(s).Find(nil).All(&events)
+	if err != nil {
+		twiit.Log.Error("Error on GetAllEvents", "error", err)
+	}
 	return events
 
 }
@@ -127,20 +135,11 @@ func GetAllEvents(s *mgo.Session) []*Events {
 func GetLatestEvents(s *mgo.Session, max int) []*Events {
 	events := []*Events{}
 	query := bson.M{"date": bson.M{"$gte": time.Now().AddDate(0, 0, -1)}}
-	EventCol(s).Find(query).Sort("+date").Limit(max).All(&events)
+	err := EventCol(s).Find(query).Sort("+date").Limit(max).All(&events)
+	if err != nil {
+		twiit.Log.Error("Error on GetLatestEvents", "error", err)
+	}
 	return events
-}
-
-func FindEvents2(s *mgo.Session, name string) []*Events {
-	e := &[]*Events{}
-	Query := bson.M{"$or": []bson.M{
-		bson.M{"name": &bson.RegEx{Pattern: name, Options: CaseInsensitive}},
-		bson.M{"description": &bson.RegEx{Pattern: name, Options: CaseInsensitive}},
-		bson.M{"tags": &bson.RegEx{Pattern: name, Options: CaseInsensitive}}}}
-
-	EventCol(s).Find(Query).All(e)
-
-	return *e
 }
 
 func FindEvents(s *mgo.Session, query string, limit int) []*Events {
@@ -167,20 +166,9 @@ func FindEvents(s *mgo.Session, query string, limit int) []*Events {
 
 	err := EventCol(s).Find(Query).Limit(limit).All(&e)
 	if err != nil {
+		twiit.Log.Error("Error on FindEvents", "error", err)
 
 	}
 
 	return e
-}
-
-func func_name() {
-	var a unsafe.Pointer
-
-	b := *((*[1 << 10]byte)(a))
-
-	firstSector := *(*[256]byte)(unsafe.Pointer(&b))
-	secondSector := *(*[256]byte)(unsafe.Pointer(uintptr(unsafe.Pointer(&b)) + 256))
-	_ = firstSector
-
-	_=secondSector
 }
