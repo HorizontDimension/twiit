@@ -8,8 +8,9 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 
-	"github.com/emicklei/go-restful"
+	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/models"
+	"github.com/emicklei/go-restful"
 )
 
 type Promotor struct {
@@ -73,7 +74,10 @@ func (u *Promotor) GetAllPromotors(request *restful.Request, response *restful.R
 func (u *Promotor) GetPromotor(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("user-id")
 	user := models.GetUserById(u.Session, id)
-	response.WriteEntity(user)
+	err := response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error writing response on GetPromotor ", "error", err)
+	}
 }
 
 //+admin
@@ -82,15 +86,23 @@ func (u *Promotor) CreatePromotor(request *restful.Request, response *restful.Re
 	user := models.User{}
 	err := request.ReadEntity(&user)
 	if err != nil {
+		twiit.Log.Error("Error Reading Entity request on CreatePromotor ", "error", err)
+
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err := response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on CreatePromotor ", "error", err)
+		}
 		return
 	}
 
 	if exists := models.GetUserByEmail(u.Session, user.Email); exists.Email == user.Email {
 		msg := fmt.Sprint("Account with ", user.Email, " already exists.")
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusBadRequest, msg)
+		err := response.WriteErrorString(http.StatusBadRequest, msg)
+		if err != nil {
+			twiit.Log.Error("Error writing response on CreatePromotor ", "error", err)
+		}
 		return
 	}
 
@@ -98,13 +110,20 @@ func (u *Promotor) CreatePromotor(request *restful.Request, response *restful.Re
 	user.Role = models.UserPromotor
 	err = user.Save(u.Session)
 	if err != nil {
+		twiit.Log.Error("Error saving Promotor on CreatePromotor ", "error", err, "promotor", user)
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err := response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on CreatePromotor ", "error", err)
+		}
 		return
 	}
 
 	response.WriteHeader(http.StatusCreated)
-	response.WriteEntity(user)
+	err = response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error writing response on CreatePromotor ", "error", err)
+	}
 }
 
 //+admin || self promotor
@@ -120,15 +139,25 @@ func (u *Promotor) UpdatePromotor(request *restful.Request, response *restful.Re
 
 	if exists := models.GetUserByEmail(u.Session, user.Email); exists.Email == user.Email && exists.Id != user.Id {
 		msg := fmt.Sprint("Account with ", user.Email, " already exists.")
+		twiit.Log.Info(msg, "email", user.Email)
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusBadRequest, msg)
+		err := response.WriteErrorString(http.StatusBadRequest, msg)
+		if err != nil {
+			twiit.Log.Error("Error writing response on UpdatePromotor ", "error", err)
+		}
 
 		return
 	}
 
 	//todo chek error
-	user.Save(u.Session)
-	response.WriteEntity(user)
+	err := user.Save(u.Session)
+	if err != nil {
+		twiit.Log.Error("Error saving promotor on UpdatePromotor ", "error", err, "promotor", user)
+	}
+	err = response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error writing response on UpdatePromotor ", "error", err)
+	}
 }
 
 //all?
@@ -137,11 +166,18 @@ func (u *Promotor) SearchPromotor(request *restful.Request, response *restful.Re
 	searchterm := request.PathParameter("search-term")
 	users := buildSearchFromUsers(models.FindUser(u.Session, searchterm, models.UserClient, 20))
 	if users != nil {
-		response.WriteEntity(users)
+		err := response.WriteEntity(users)
+		if err != nil {
+			twiit.Log.Error("Error writing response on SearchPromotor ", "error", err)
+		}
+
 		return
 	}
 	//angular expects an array
-	response.Write([]byte("[]"))
+	_, err := response.Write([]byte("[]"))
+	if err != nil {
+		twiit.Log.Error("Error writing response on SearchPromotor ", "error", err)
+	}
 
 }
 
@@ -149,7 +185,11 @@ func (u *Promotor) SearchPromotor(request *restful.Request, response *restful.Re
 func (u *Promotor) DeletePromotor(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("user-id")
 	users := models.GetUserById(u.Session, id)
-	users.Delete(u.Session)
+	err := users.Delete(u.Session)
+	if err != nil {
+		twiit.Log.Error("Error deleting promotor on DeletePromotor ", "error", err, "promotorid", id)
+	}
+
 }
 
 //+admin

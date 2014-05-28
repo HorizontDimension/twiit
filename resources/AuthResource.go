@@ -1,15 +1,15 @@
 package resources
 
 import (
-	"code.google.com/p/go.crypto/bcrypt"
-	"github.com/emicklei/go-restful"
-	"labix.org/v2/mgo"
 	"net/http"
+
+	"code.google.com/p/go.crypto/bcrypt"
+
 	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/models"
-	//"twiit/utils"
+	"github.com/emicklei/go-restful"
 
-	"log"
+	"labix.org/v2/mgo"
 )
 
 type Auth struct {
@@ -43,8 +43,14 @@ func (a *Auth) Login(request *restful.Request, response *restful.Response) {
 	var userauth authform
 	err := request.ReadEntity(&userauth)
 	if err != nil {
+		twiit.Log.Error("Error reading auth entity on Auth.Login ", "error", err)
+
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteError(http.StatusInternalServerError, err)
+		err := response.WriteError(http.StatusInternalServerError, err)
+		if err != nil {
+			twiit.Log.Error("Error writing response on Auth.Login ", "error", err)
+
+		}
 		return
 	}
 
@@ -54,7 +60,11 @@ func (a *Auth) Login(request *restful.Request, response *restful.Response) {
 
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteError(http.StatusInternalServerError, err)
+		err := response.WriteError(http.StatusInternalServerError, err)
+		if err != nil {
+			twiit.Log.Error("Error writing response on Auth.Login ", "error", err)
+
+		}
 		return
 
 	}
@@ -63,29 +73,46 @@ func (a *Auth) Login(request *restful.Request, response *restful.Response) {
 
 	token.Set("id", user.Id.Hex())
 	token.Set("role", user.Role)
-	token.WriteHeader(response.ResponseWriter)
-	s, err := token.Generate()
-	log.Println("created", s, err)
+	err = token.WriteHeader(response.ResponseWriter)
+	if err != nil {
+		twiit.Log.Error("Error writing response on Auth.Login ", "error", err)
+	}
+
 }
 
 func RequirePromotor(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 
 	token, err := twiit.ParseTokenFromReq(req.Request)
 	if err != nil {
-		resp.WriteErrorString(http.StatusUnauthorized, "not authorized: unable to parse token")
+		twiit.Log.Warn("Error parsing token ", "error", err)
+		err = resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequirePromotor ", "error", err)
+
+		}
 		return
 	}
 
 	if !token.IsValid() {
-		resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err = resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequirePromotor ", "error", err)
+
+		}
 		return
 
 	}
 
+	//get rid of that compiller bug??
 	role := uint8(token.Get("role").(float64))
+
 	if role != models.UserPromotor && role != models.UserAdmin {
-		log.Println("----------->", role, models.UserPromotor)
-		resp.WriteError(http.StatusUnauthorized, err)
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequirePromotor ", "error", err)
+
+		}
 		return
 	}
 
@@ -96,18 +123,33 @@ func RequireAdmin(req *restful.Request, resp *restful.Response, chain *restful.F
 
 	token, err := twiit.ParseTokenFromReq(req.Request)
 	if err != nil {
-		resp.WriteError(http.StatusUnauthorized, err)
+		err = resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireAdmin ", "error", err)
+
+		}
 		return
 	}
 
 	if !token.IsValid() {
-		resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireAdmin ", "error", err)
+
+		}
 		return
 
 	}
 	role := token.Get("role").(uint8)
 	if role != models.UserAdmin {
-		resp.WriteError(http.StatusUnauthorized, err)
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireAdmin ", "error", err)
+
+		}
 		return
 	}
 
@@ -117,17 +159,32 @@ func RequireAdmin(req *restful.Request, resp *restful.Response, chain *restful.F
 func RequireDoorman(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	token, err := twiit.ParseTokenFromReq(req.Request)
 	if err != nil {
-		resp.WriteError(http.StatusUnauthorized, err)
+		twiit.Log.Info("Unable to parse token from request on RequireDoorman ", "error", err)
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireDoorman ", "error", err)
+
+		}
 		return
 	}
 	if !token.IsValid() {
-		resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireDoorman ", "error", err)
+
+		}
 		return
 
 	}
 	role := token.Get("role").(uint8)
 	if role != models.UserGateKeeper && role != models.UserAdmin {
-		resp.WriteError(http.StatusUnauthorized, err)
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireDoorman ", "error", err)
+
+		}
 		return
 	}
 
@@ -137,22 +194,37 @@ func RequireDoorman(req *restful.Request, resp *restful.Response, chain *restful
 func RequireLoggedUser(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
 	token, err := twiit.ParseTokenFromReq(req.Request)
 	if err != nil {
-		resp.WriteErrorString(http.StatusUnauthorized, "not authorized: unable to parse token")
+		twiit.Log.Info("Unable to parse token from request on RequireLoggedUser ", "error", err)
+
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireLoggedUser ", "error", err)
+
+		}
 		return
 	}
 
 	if !token.IsValid() {
-		resp.WriteErrorString(http.StatusUnauthorized, "not authorized not valid token")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireLoggedUser ", "error", err)
+
+		}
 		return
 
 	}
 	role := (token.Get("role")).(uint8)
 
-	log.Println(role == models.UserClient)
-
 	if role != models.UserGateKeeper && role != models.UserAdmin && role != models.UserPromotor && role != models.UserClient {
 
-		resp.WriteErrorString(http.StatusUnauthorized, "not authorized not valid user")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+
+		if err != nil {
+			twiit.Log.Error("Error writing response on RequireLoggedUser ", "error", err)
+
+		}
 		return
 	}
 

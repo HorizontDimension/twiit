@@ -1,15 +1,15 @@
 package resources
 
 import (
+	"io"
 	"net/http"
 
-	"io"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"log"
 
-	"github.com/emicklei/go-restful"
+	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/models"
+	"github.com/emicklei/go-restful"
 )
 
 type File struct {
@@ -37,11 +37,14 @@ func (f *File) Register(container *restful.Container) {
 func (f *File) GetFile(request *restful.Request, response *restful.Response) {
 
 	id := request.PathParameter("file-id")
-	log.Println(id)
 
 	if id == "" {
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusBadRequest, "empty file id")
+		err := response.WriteErrorString(http.StatusBadRequest, "empty file id")
+		if err != nil {
+			twiit.Log.Error("Error writing response on GetFile ", "error", err)
+
+		}
 		return
 	}
 
@@ -49,19 +52,34 @@ func (f *File) GetFile(request *restful.Request, response *restful.Response) {
 	files = models.FilesFs(f.Session)
 
 	file, err := files.OpenId(bson.ObjectIdHex(id))
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			twiit.Log.Error("Error Open grifsFile ", "error", err, "file", id)
+		}
+
+	}()
+
 	if err != nil {
+
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusNotFound, "file not found: "+err.Error())
+		err := response.WriteErrorString(http.StatusInternalServerError, "error")
+		if err != nil {
+			twiit.Log.Error("Error writing response on GetFile ", "error", err)
+		}
 		return
 	}
-	defer file.Close()
 
 	//set content Type
 	response.AddHeader("Content-Type", file.ContentType())
 	_, err = io.Copy(response, file)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err := response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on GetFile ", "error", err)
+
+		}
 		return
 	}
 

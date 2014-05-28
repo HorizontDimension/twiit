@@ -8,6 +8,7 @@ import (
 
 	"github.com/emicklei/go-restful"
 
+	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/models"
 )
 
@@ -88,12 +89,20 @@ func (e Event) Register(container *restful.Container) {
 
 func (e *Event) GetAllEvents(request *restful.Request, response *restful.Response) {
 	events := models.GetAllEvents(e.Session)
-	response.WriteEntity(events)
+	err := response.WriteEntity(events)
+	if err != nil {
+		twiit.Log.Error("Error writing response on GetAllEvents ", "error", err)
+
+	}
 }
 
 func (e *Event) Latests(request *restful.Request, response *restful.Response) {
 	levents := models.GetLatestEvents(e.Session, 3)
-	response.WriteEntity(levents)
+	err := response.WriteEntity(levents)
+	if err != nil {
+		twiit.Log.Error("Error writing response on Latests ", "error", err)
+
+	}
 }
 
 func (e *Event) Calendar(request *restful.Request, response *restful.Response) {
@@ -122,14 +131,23 @@ func (e *Event) Calendar(request *restful.Request, response *restful.Response) {
 		result.Result = append(result.Result, cr)
 	}
 
-	response.WriteEntity(result)
+	err := response.WriteEntity(result)
+	if err != nil {
+		twiit.Log.Error("Error writing response on Calendar ", "error", err)
+
+	}
 
 }
 
 func (e *Event) GetEvent(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("event-id")
 	event := models.GetEventById(e.Session, id)
-	response.WriteEntity(event)
+	err := response.WriteEntity(event)
+	if err != nil {
+		twiit.Log.Error("Error writing response on GetEvent ", "error", err)
+
+	}
+
 }
 
 //insert a user
@@ -137,19 +155,29 @@ func (e *Event) CreateEvent(request *restful.Request, response *restful.Response
 	var event models.Events
 	err := request.ReadEntity(&event)
 	if err != nil {
+		twiit.Log.Error("Error reading Entity from request on  CreateEvent", "error", err)
+
+		response.AddHeader("Content-Type", "text/plain")
+		err := response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		if err != nil {
-			response.AddHeader("Content-Type", "text/plain")
-			response.WriteErrorString(http.StatusInternalServerError, err.Error())
-			return
+			twiit.Log.Error("Error writing response on CreateEvent ", "error", err)
+
 		}
+		return
+
 	}
 
 	//todo validate entry
 
 	err = event.Save(e.Session)
 	if err != nil {
+		twiit.Log.Error("Error Saving Event on  CreateEvent", "event", event, "error", err)
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err = response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on CreateEvent ", "error", err)
+
+		}
 		return
 	}
 
@@ -164,16 +192,26 @@ func (e *Event) UpdateEvent(request *restful.Request, response *restful.Response
 func (e *Event) SearchEvent(request *restful.Request, response *restful.Response) {
 	searchterm := request.PathParameter("search-term")
 	events := models.FindEvents(e.Session, searchterm, 20)
-	response.WriteEntity(events)
+	err := response.WriteEntity(events)
+	if err != nil {
+		twiit.Log.Error("Error writing response on SearchEvent ", "error", err)
+
+	}
 }
 
 func (e *Event) DeleteEvent(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("event-id")
 	err := models.EventCol(e.Session).RemoveId(id)
+	twiit.Log.Error("Error Deleting Event on  CreateEvent", "eventid", id, "error", err)
 
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err := response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on DeleteEvent ", "error", err)
+
+		}
+
 		return
 	}
 

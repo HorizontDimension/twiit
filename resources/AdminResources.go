@@ -148,8 +148,16 @@ func (u *Admin) UpdateAdmin(request *restful.Request, response *restful.Response
 	}
 
 	//todo chek error
-	user.Save(u.Session)
-	response.WriteEntity(user)
+	err := user.Save(u.Session)
+	if err != nil {
+		twiit.Log.Error("Error updating Admin ", "user", user, "error", err)
+
+	}
+	err = response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error writing response on UpdateAdmin ", "error", err)
+
+	}
 }
 
 //all?
@@ -158,18 +166,30 @@ func (u *Admin) SearchAdmin(request *restful.Request, response *restful.Response
 	searchterm := request.PathParameter("search-term")
 	users := buildSearchFromUsers(models.FindUser(u.Session, searchterm, models.UserAdmin, 20))
 	if users != nil {
-		response.WriteEntity(users)
+		err := response.WriteEntity(users)
+		if err != nil {
+			twiit.Log.Error("Error writing response on SearchAdmin ", "error", err)
+
+		}
 		return
 	}
 	//angular expects an array
-	response.Write([]byte("[]"))
+	_, err := response.Write([]byte("[]"))
+	if err != nil {
+		twiit.Log.Error("Error writing response on SearchAdmin ", "error", err)
+
+	}
 
 }
 
 //+admin
 func (u *Admin) DeleteAdmin(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("user-id")
-	users := models.GetUserById(u.Session, id)
-	users.Delete(u.Session)
+	user := models.GetUserById(u.Session, id)
+	err := user.Delete(u.Session)
+	if err != nil {
+		twiit.Log.Error("Error unable to delete admin ", "error", err, "admin", user)
+
+	}
 
 }

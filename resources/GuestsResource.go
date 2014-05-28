@@ -8,6 +8,7 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 
+	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/models"
 	"github.com/emicklei/go-restful"
 )
@@ -97,7 +98,10 @@ func (u *Guest) GetAllGuests(request *restful.Request, response *restful.Respons
 func (u *Guest) GetGuest(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("user-id")
 	user := models.GetUserById(u.Session, id)
-	response.WriteEntity(user)
+	err := response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error writing response on GetGuest ", "error", err)
+	}
 }
 
 //insert a user
@@ -106,14 +110,20 @@ func (u *Guest) CreateGuest(request *restful.Request, response *restful.Response
 	err := request.ReadEntity(&user)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err = response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on CreateGuest ", "error", err)
+		}
 		return
 	}
 
 	if exists := models.GetUserByEmail(u.Session, user.Email); exists.Email == user.Email {
 		msg := fmt.Sprint("Account with ", user.Email, " already exists.")
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusBadRequest, msg)
+		err = response.WriteErrorString(http.StatusBadRequest, msg)
+		if err != nil {
+			twiit.Log.Error("Error writing response on CreateGuest ", "error", err)
+		}
 		return
 	}
 
@@ -122,12 +132,18 @@ func (u *Guest) CreateGuest(request *restful.Request, response *restful.Response
 	err = user.Save(u.Session)
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		err = response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on CreateGuest ", "error", err)
+		}
 		return
 	}
 
 	response.WriteHeader(http.StatusCreated)
-	response.WriteEntity(user)
+	err = response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error writing response on CreateGuest ", "error", err)
+	}
 }
 
 //update a user
@@ -143,14 +159,27 @@ func (u *Guest) UpdateGuest(request *restful.Request, response *restful.Response
 	if exists := models.GetUserByEmail(u.Session, user.Email); exists.Email == user.Email && exists.Id != user.Id {
 		msg := fmt.Sprint("Account with ", user.Email, " already exists.")
 		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusBadRequest, msg)
+		err := response.WriteErrorString(http.StatusBadRequest, msg)
+		if err != nil {
+			twiit.Log.Error("Error writing response on UpdateGuest ", "error", err)
+		}
 
 		return
 	}
 
 	//todo chek error
-	user.Save(u.Session)
-	response.WriteEntity(user)
+	err := user.Save(u.Session)
+	if err != nil {
+		twiit.Log.Error("Error savid Guest ", "error", err, "guest", user)
+		err = response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on UpdateGuest ", "error", err)
+		}
+	}
+	err = response.WriteEntity(user)
+	if err != nil {
+		twiit.Log.Error("Error writing response on UpdateGuest ", "error", err)
+	}
 }
 
 //search a user
@@ -158,17 +187,26 @@ func (u *Guest) SearchGuest(request *restful.Request, response *restful.Response
 	searchterm := request.PathParameter("search-term")
 	users := buildSearchFromUsers(models.FindUser(u.Session, searchterm, models.UserClient, 20))
 	if users != nil {
-		response.WriteEntity(users)
+		err := response.WriteEntity(users)
+		if err != nil {
+			twiit.Log.Error("Error writing response on SearchGuest ", "error", err)
+		}
 		return
 	}
 	//angular expects an array
-	response.Write([]byte("[]"))
+	_, err := response.Write([]byte("[]"))
+	if err != nil {
+		twiit.Log.Error("Error writing response on SearchGuest ", "error", err)
+	}
 
 }
 
 func (u *Guest) DeleteGuest(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("user-id")
-	users := models.GetUserById(u.Session, id)
-	users.Delete(u.Session)
+	user := models.GetUserById(u.Session, id)
+	err := user.Delete(u.Session)
+	if err != nil {
+		twiit.Log.Error("Error Deleting Guest ", "error", err, "guest", user)
+	}
 
 }
