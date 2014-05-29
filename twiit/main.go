@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"io"
 	"log"
+	"mime"
 	"net/http"
+	"path/filepath"
+	"strings"
 
 	"github.com/HorizontDimension/twiit/resources"
 
@@ -53,8 +58,10 @@ func main() {
 		ApiPath:        "/apidocs.json",
 
 		// Optionally, specifiy where the UI is located
-		SwaggerPath:     "/apidocs/",
-		SwaggerFilePath: "/root/gocode/src/github.com/HorizontDimension/twiit/swagger-ui/dist"}
+		SwaggerPath: "/apidocs/",
+		//	SwaggerFilePath: "/root/gocode/src/github.com/HorizontDimension/twiit/swagger-ui/dist",
+		StaticHandler: &BinaryHandler{},
+	}
 
 	swagger.RegisterSwaggerService(config, wsContainer)
 
@@ -62,4 +69,32 @@ func main() {
 	server := &http.Server{Addr: ":80", Handler: wsContainer}
 	log.Fatal(server.ListenAndServe())
 
+}
+
+type BinaryHandler struct {
+}
+
+func (b *BinaryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	file := strings.TrimPrefix(r.RequestURI, "/apidocs/")
+	if file == "" {
+		file = "index.html"
+	}
+	mimetype := mime.TypeByExtension(filepath.Ext(file))
+	file = "dist/" + file
+
+	w.Header().Set("Content-Type", mimetype)
+
+	data, err := Asset(file)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("not found"))
+		return
+	}
+	if len(data) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("not found"))
+		return
+	}
+	io.Copy(w, bytes.NewBuffer(data))
 }
