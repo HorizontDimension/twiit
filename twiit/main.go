@@ -6,8 +6,8 @@ import (
 
 	"github.com/HorizontDimension/twiit/resources"
 
+	"github.com/HorizontDimension/go-restful/swagger"
 	"github.com/emicklei/go-restful"
-	"github.com/emicklei/go-restful/swagger"
 	"labix.org/v2/mgo"
 )
 
@@ -54,10 +54,12 @@ func main() {
 
 		// Optionally, specifiy where the UI is located
 		SwaggerPath:     "/apidocs/",
-		SwaggerFilePath: "/root/gocode/src/twiit/swagger-ui/dist"}
+		SwaggerFilePath: "/root/gocode/src/github.com/HorizontDimension/twiit/swagger-ui/dist"}
+
 	swagger.RegisterSwaggerService(config, wsContainer)
 
 	log.Printf("start listening on localhost:80")
-	server := &http.Server{Addr: ":8080", Handler: wsContainer}
+	server := &http.Server{Addr: ":80", Handler: wsContainer}
 	log.Fatal(server.ListenAndServe())
+
 }
