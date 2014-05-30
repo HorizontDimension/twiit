@@ -1,7 +1,6 @@
 package models
 
 import (
-	"log"
 	"strings"
 	"time"
 	//"unsafe"
@@ -47,28 +46,51 @@ func (e *Events) HasGuestlist(s *mgo.Session, owner bson.ObjectId) (event *Event
 	return event
 }
 
-func (e *Events) AddToGuestlist(owner bson.ObjectId, guest bson.ObjectId) {
+//Guestlist returns a existing guestlist for a given user or create one if doesnt exist
+func (e *Events) GuestlistByOwner(owner bson.ObjectId) *GuestList {
+	var index int
+	var found = false
+
 	if len(e.GuestList) < 1 {
 		e.GuestList = []GuestList{}
-		e.GuestList = append(e.GuestList, *(NewGuestlist(owner, guest)))
-	} else {
-		for guestIndex, guestlist := range e.GuestList {
-			//check if the owner/promotor got an guestlist
-			if guestlist.Owner == owner {
-				log.Println("owner exists")
-				//Owner exists! lets check if a guest is already on the list
-				log.Println("guestlist.GuestExists(guest)", guest)
-				if !(guestlist.GuestExists(guest)) {
-					//lets add it
-					log.Println("owner exists | and guest isn't in gueslits")
-					e.GuestList[guestIndex].AddGuest(guest)
-				}
-			} else { //no guestlist created for the owner
-				log.Println("empty guestlist")
-				e.GuestList = append(e.GuestList, *(NewGuestlist(owner, guest)))
+		e.GuestList = append(e.GuestList, *(NewGuestlist(owner, "")))
+		return &e.GuestList[0]
+	}
+
+	for i := range e.GuestList {
+		if e.GuestList[i].Owner == owner {
+			found = true
+			index = i
+			break
+		}
+	}
+
+	if !found {
+		e.GuestList = []GuestList{}
+		e.GuestList = append(e.GuestList, *(NewGuestlist(owner, "")))
+		for i := range e.GuestList {
+			if e.GuestList[i].Owner == owner {
+				found = true
+				index = i
+				break
 			}
 		}
 	}
+
+	if found {
+		return &e.GuestList[index]
+	}
+	return nil
+}
+
+func (e *Events) AddToGuestlist(owner bson.ObjectId, guest bson.ObjectId) {
+
+	//guestlist := e.GuestlistByOwner(owner)
+	//	guestlist.AddGuest(guest)
+	//	err := e.Save(e.)
+	//if err != nil {
+	//		twiit.Log.Error("error saving event in AddToGuestlist", "error", err, "owner", owner, "guest", guest)
+	//}
 }
 
 func (e *Events) buildTokenList() {

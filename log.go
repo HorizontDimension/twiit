@@ -13,6 +13,7 @@ func init() {
 
 	handler := log.MultiHandler(
 		log.LvlFilterHandler(log.LvlError, log.Must.FileHandler(errorlogfile, log.LogfmtFormat())),
+		log.StdoutHandler,
 	)
 
 	Log.SetHandler(log.SyncHandler(handler))

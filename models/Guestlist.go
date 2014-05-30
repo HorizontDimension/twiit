@@ -3,23 +3,50 @@ package models
 import (
 	//"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	//"time"
+	"time"
 )
 
+type Entry struct {
+	Entered   bool
+	EntryTime time.Time
+	CardId    int
+	User      bson.ObjectId
+}
+
 type GuestList struct {
-	Owner  bson.ObjectId
-	Guests []bson.ObjectId
+	Owner   bson.ObjectId
+	Guests  []bson.ObjectId
+	Entries []Entry
 }
 
 func NewGuestlist(owner bson.ObjectId, guest bson.ObjectId) (guestlist *GuestList) {
 	guestlist = new(GuestList)
 	guestlist.Owner = owner
-	guestlist.Guests = []bson.ObjectId{guest}
+	if guest != "" {
+		guestlist.Guests = []bson.ObjectId{guest}
+	}
+
 	return
 }
 
+func (g *GuestList) IsOwner(user bson.ObjectId) bool {
+	return g.Owner == user
+}
+
 func (g *GuestList) AddGuest(guest bson.ObjectId) {
-	g.Guests = append(g.Guests, guest)
+	if !g.GuestExists(guest) {
+		g.Guests = append(g.Guests, guest)
+	}
+}
+
+func (g *GuestList) RemoveGuest(guest bson.ObjectId) {
+
+	for i := 0; i < len(g.Guests); i++ {
+		if g.Guests[i] == guest {
+			g.Guests = deleteguest(g.Guests, i)
+			break
+		}
+	}
 }
 
 func (g *GuestList) GuestExists(guest bson.ObjectId) bool {
@@ -29,4 +56,8 @@ func (g *GuestList) GuestExists(guest bson.ObjectId) bool {
 		}
 	}
 	return false
+}
+
+func deleteguest(g []bson.ObjectId, i int) []bson.ObjectId {
+	return append(g[:i], g[i+1:]...)
 }

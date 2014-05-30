@@ -17,10 +17,6 @@ type Promotor struct {
 	Session *mgo.Session
 }
 
-func (p *Promotor) AssociateGuest(guestId bson.ObjectId) {
-
-}
-
 func (u Promotor) Register(container *restful.Container) {
 
 	ws := new(restful.WebService)
@@ -41,6 +37,13 @@ func (u Promotor) Register(container *restful.Container) {
 		Doc("create a Promotor").
 		Operation("CreatePromotor").
 		Reads(models.User{})) // from the request
+
+	ws.Route(ws.POST("/inviteguest/{guest-id}").To(u.InviteGuest).
+		// docs
+		Doc("Invite a guest").
+		Operation("InviteGuest").
+		Param(ws.PathParameter("guest-id", "identifier of the guest").DataType("string")).
+		Reads("event-id")) // from the request
 
 	ws.Route(ws.PUT("/{user-id}").To(u.UpdatePromotor).
 		// docs
@@ -63,6 +66,35 @@ func (u Promotor) Register(container *restful.Container) {
 		Writes(models.SearchResult{})) // on the response
 
 	container.Add(ws)
+}
+
+//todo validate user input
+func (p *Promotor) InviteGuest(request *restful.Request, response *restful.Response) {
+	var guestid, eventid string
+
+	guestid = request.PathParameter("guest-id")
+
+	err := request.ReadEntity(&eventid)
+	if err != nil {
+		twiit.Log.Error("Error Reading event-id from request ", "error", err)
+	}
+
+	//validate event
+
+	//get Event
+	event := models.GetEventById(p.Session, eventid)
+	if event == nil {
+		twiit.Log.Warn("Event not found on InviteGuest", "error", err, "eventid", eventid)
+		return
+	}
+	guest := models.GetUserById(p.Session, guestid)
+	if event == nil {
+		twiit.Log.Warn("User not found on InviteGuest", "error", err, "eventid", eventid)
+		return
+	}
+
+	twiit.Log.Info("invite guest", "guest-id", guestid, "event-id", eventid, "guest", guest)
+
 }
 
 //+admin
