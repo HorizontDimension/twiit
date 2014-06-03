@@ -2,6 +2,7 @@ package models
 
 import (
 	//"labix.org/v2/mgo"
+	"github.com/HorizontDimension/twiit"
 	"labix.org/v2/mgo/bson"
 	"time"
 )
@@ -25,7 +26,6 @@ func NewGuestlist(owner bson.ObjectId, guest bson.ObjectId) (guestlist *GuestLis
 	if guest != "" {
 		guestlist.Guests = []bson.ObjectId{guest}
 	}
-
 	return
 }
 
@@ -34,9 +34,15 @@ func (g *GuestList) IsOwner(user bson.ObjectId) bool {
 }
 
 func (g *GuestList) AddGuest(guest bson.ObjectId) {
+	twiit.Log.Info("add guest", "guest", guest, "g---->", g)
+
 	if !g.GuestExists(guest) {
 		g.Guests = append(g.Guests, guest)
+
 	}
+
+	twiit.Log.Info("add guest", "guest", guest, "g---->", g)
+
 }
 
 func (g *GuestList) RemoveGuest(guest bson.ObjectId) {
