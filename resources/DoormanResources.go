@@ -29,7 +29,7 @@ func (d *Doorman) Register(container *restful.Container) {
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON) // you can specify this per route as well
 
-	ws.Route(ws.GET("/checkin/{event-id}").To(d.Checkin).
+	ws.Route(ws.POST("/checkin/{event-id}").To(d.Checkin).
 		Doc("check in a guest").
 		Operation("CheckIn").
 		Param(ws.PathParameter("event-id", "id of the event").DataType("string")).
@@ -67,5 +67,15 @@ func (d *Doorman) Checkin(request *restful.Request, response *restful.Response) 
 		entry.Promotor,
 		entry.Guest,
 		entry.CartId)
+	err = event.Save(d.Session)
+	if err != nil {
+		twiit.Log.Error("Error Saving Event on  Checkin", "event", event, "error", err)
+		response.AddHeader("Content-Type", "text/plain")
+		err = response.WriteErrorString(http.StatusInternalServerError, err.Error())
+		if err != nil {
+			twiit.Log.Error("Error writing response on Checkin ", "error", err)
 
+		}
+		return
+	}
 }
