@@ -46,11 +46,34 @@ func (e *Events) HasGuestlist(s *mgo.Session, owner bson.ObjectId) (event *Event
 	return event
 }
 
+func (e *Events) GetPromotors(s *mgo.Session) (promotors []User) {
+	promotorids := []bson.ObjectId{}
+	for _, guestlist := range e.GuestList {
+
+		promotorids = append(promotorids, guestlist.Owner)
+
+	}
+	query := bson.M{"_id": bson.M{"$in": promotorids}}
+	promotors = make([]User, len(e.GuestList))
+	err := UserCol(s).Find(query).All(&promotors)
+	if err != nil {
+		twiit.Log.Error("failed to get promotors", "error", err, "query", query, "len", len(promotorids))
+	}
+	return
+}
+
+func (e *Events) CheckInGuest(owner bson.ObjectId, guest bson.ObjectId, cardid int) {
+
+	guestList := e.GuestlistByOwner(owner)
+	guestList.CheckIn(guest, cardid)
+}
+
 //Guestlist returns a existing guestlist for a given user or create one if doesnt exist
 func (e *Events) GuestlistByOwner(owner bson.ObjectId) *GuestList {
 	var index int
 	var found = false
 
+	//if empty guestlist
 	if len(e.GuestList) < 1 {
 		e.GuestList = []GuestList{}
 		e.GuestList = append(e.GuestList, *(NewGuestlist(owner, "")))
@@ -66,7 +89,6 @@ func (e *Events) GuestlistByOwner(owner bson.ObjectId) *GuestList {
 	}
 
 	if !found {
-		e.GuestList = []GuestList{}
 		e.GuestList = append(e.GuestList, *(NewGuestlist(owner, "")))
 		for i := range e.GuestList {
 			if e.GuestList[i].Owner == owner {

@@ -9,10 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/HorizontDimension/twiit/assets"
 	"github.com/HorizontDimension/twiit/resources"
 
 	"github.com/HorizontDimension/go-restful/swagger"
 	"github.com/emicklei/go-restful"
+	"github.com/fengsp/knight"
 	"labix.org/v2/mgo"
 )
 
@@ -29,6 +31,7 @@ func main() {
 	authR := resources.Auth{Session: session}
 	promotorR := resources.Promotor{Session: session}
 	adminsR := resources.Admin{Session: session}
+	doormanR := resources.Doorman{Session: session}
 
 	promotorR.Register(wsContainer)
 	guestsR.Register(wsContainer)
@@ -36,6 +39,7 @@ func main() {
 	filesR.Register(wsContainer)
 	authR.Register(wsContainer)
 	adminsR.Register(wsContainer)
+	doormanR.Register(wsContainer)
 
 	//wsContainer.Filter(wsContainer.OPTIONSFilter)
 	// Add container filter to enable CORS
@@ -66,8 +70,10 @@ func main() {
 	swagger.RegisterSwaggerService(config, wsContainer)
 
 	log.Printf("start listening on localhost:80")
-	server := &http.Server{Addr: ":80", Handler: wsContainer}
-	log.Fatal(server.ListenAndServe())
+	//server := &http.Server{Addr: ":80", Handler: wsContainer}
+	//log.Fatal(server.ListenAndServe())
+	knight := knight.NewKnight("../")
+	log.Fatalln(knight.ListenAndServe(":80", wsContainer))
 
 }
 
@@ -81,11 +87,11 @@ func (b *BinaryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		file = "index.html"
 	}
 	mimetype := mime.TypeByExtension(filepath.Ext(file))
-	file = "dist/" + file
+	//file = "dist/" + file
 
 	w.Header().Set("Content-Type", mimetype)
 
-	data, err := Asset(file)
+	data, err := assets.Asset(file)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("not found"))

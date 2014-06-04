@@ -98,7 +98,6 @@ func (p *Promotor) InviteGuest(request *restful.Request, response *restful.Respo
 		twiit.Log.Info("error parsing token on inviteguest", "error", err)
 
 	}
-
 	gl := event.GuestlistByOwner(bson.ObjectIdHex(tk.Get("id").(string)))
 	gl.AddGuest(guest.Id)
 	err = event.Save(p.Session)

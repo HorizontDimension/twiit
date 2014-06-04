@@ -77,6 +77,22 @@ func (u *User) buildTokenList() {
 	u.Tokens = append(u.Tokens, utils.Sanitize(u.Firstname), utils.Sanitize(u.Lastname), utils.Sanitize(u.Email), utils.Sanitize(u.PhoneNumber))
 }
 
+func (u *User) SetPromotor(owner bson.ObjectId) {
+	if !u.alreadyowner(owner) {
+		u.Promotors = append(u.Promotors, owner)
+	}
+
+}
+
+func (u *User) alreadyowner(owner bson.ObjectId) bool {
+	for _, promotor := range u.Promotors {
+		if promotor == owner {
+			return true
+		}
+	}
+	return false
+}
+
 // Save a user to the database. If a struct with p.Pass != nil is passed this
 // will update the user's password as well.
 // This returns the error value from mgo.Upsert()
@@ -95,7 +111,6 @@ func (user *User) Save(s *mgo.Session) error {
 	if err != nil {
 		twiit.Log.Error("Failed to Ensure database index ", "error", err)
 		return err
-
 	}
 
 	//if we provide a password
@@ -200,6 +215,39 @@ func FindUser(s *mgo.Session, query string, role uint8, limit int) []*User {
 	} else {
 		Query = bson.M{"$or": []bson.M{
 			bson.M{"tokens": &bson.RegEx{Pattern: query, Options: CaseInsensitive}, "role": role},
+		}}
+	}
+
+	err := UserCol(s).Find(Query).Limit(limit).All(u)
+	if err != nil {
+		twiit.Log.Error("Error on FinUser", "error", err)
+	}
+
+	return *u
+}
+
+//finduser
+func FindPromotorUsers(s *mgo.Session, query string, owner bson.ObjectId, limit int) []*User {
+	u := &[]*User{}
+	var Query bson.M
+
+	//split the query in words
+	processedQuery := strings.Fields(query)
+	//if more than one word in processedList we iterate over them and  intersect multiple words in query
+	if len(processedQuery) > 1 {
+		var searches []bson.M
+		for _, word := range processedQuery {
+			search := bson.M{"$or": []bson.M{
+				bson.M{"tokens": &bson.RegEx{Pattern: word, Options: CaseInsensitive}},
+			}}
+			searches = append(searches, search)
+		}
+
+		Query = bson.M{"$and": searches, "role": UserClient, "promotors": owner}
+		//otherwise
+	} else {
+		Query = bson.M{"$or": []bson.M{
+			bson.M{"tokens": &bson.RegEx{Pattern: query, Options: CaseInsensitive}, "role": UserClient, "promotors": owner},
 		}}
 	}
 

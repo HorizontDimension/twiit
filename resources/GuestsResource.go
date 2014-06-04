@@ -127,7 +127,14 @@ func (u *Guest) CreateGuest(request *restful.Request, response *restful.Response
 		return
 	}
 
+	tk, err := twiit.ParseTokenFromReq(request.Request)
+	if err != nil {
+		twiit.Log.Info("error parsing token on inviteguest", "error", err)
+
+	}
+
 	user.Id = bson.NewObjectId()
+	user.SetPromotor(bson.ObjectIdHex(tk.Get("id").(string)))
 	user.Role = models.UserClient
 	err = user.Save(u.Session)
 	if err != nil {
@@ -184,8 +191,15 @@ func (u *Guest) UpdateGuest(request *restful.Request, response *restful.Response
 
 //search a user
 func (u *Guest) SearchGuest(request *restful.Request, response *restful.Response) {
+
+	tk, err := twiit.ParseTokenFromReq(request.Request)
+	if err != nil {
+		twiit.Log.Info("error parsing token on inviteguest", "error", err)
+
+	}
+
 	searchterm := request.PathParameter("search-term")
-	users := buildSearchFromUsers(models.FindUser(u.Session, searchterm, models.UserClient, 20))
+	users := buildSearchFromUsers(models.FindPromotorUsers(u.Session, searchterm, bson.ObjectIdHex(tk.Get("id").(string)), 20))
 	if users != nil {
 		err := response.WriteEntity(users)
 		if err != nil {
@@ -194,7 +208,7 @@ func (u *Guest) SearchGuest(request *restful.Request, response *restful.Response
 		return
 	}
 	//angular expects an array
-	_, err := response.Write([]byte("[]"))
+	_, err = response.Write([]byte("[]"))
 	if err != nil {
 		twiit.Log.Error("Error writing response on SearchGuest ", "error", err)
 	}

@@ -26,10 +26,10 @@ func (a *Auth) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
 		Path("/auth").
-		Consumes("*/*").
-		Produces("*/*") // you can specify this per route as well
+		Consumes(restful.MIME_JSON).
+		Produces(restful.MIME_JSON) // you can specify this per route as well
 
-	ws.Route(ws.POST("login").Consumes(restful.MIME_JSON).To(a.Login).
+	ws.Route(ws.POST("login").To(a.Login).
 		// docs
 		Doc("Authenticate a user").
 		Operation("Login").

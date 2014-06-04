@@ -1,15 +1,15 @@
 package resources
 
 import (
-	"labix.org/v2/mgo"
-
 	"net/http"
 	"time"
 
-	"github.com/emicklei/go-restful"
+	"strconv"
 
 	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/models"
+	"github.com/emicklei/go-restful"
+	"labix.org/v2/mgo"
 )
 
 type Event struct {
@@ -53,9 +53,10 @@ func (e Event) Register(container *restful.Container) {
 		Operation("GetEvent").
 		Writes(Calendar{})) // on the response
 
-	ws.Route(ws.GET("/latests").To(e.Latests).
+	ws.Route(ws.GET("/latests/{number-events}").To(e.Latests).
 		// docs
-		Doc("get latest events").
+		Doc("get latest  events").
+		Param(ws.PathParameter("number-events", "Number of events to get").DataType("string")).
 		Operation("Latests").
 		Writes([]*models.Events{})) // on the response
 
@@ -97,8 +98,14 @@ func (e *Event) GetAllEvents(request *restful.Request, response *restful.Respons
 }
 
 func (e *Event) Latests(request *restful.Request, response *restful.Response) {
-	levents := models.GetLatestEvents(e.Session, 3)
-	err := response.WriteEntity(levents)
+	numbers := request.PathParameter("number-events")
+	number, err := strconv.Atoi(numbers)
+	if err != nil {
+		twiit.Log.Error("Error converting number-events to int", "error", err)
+	}
+
+	levents := models.GetLatestEvents(e.Session, number)
+	err = response.WriteEntity(levents)
 	if err != nil {
 		twiit.Log.Error("Error writing response on Latests ", "error", err)
 

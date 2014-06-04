@@ -2,16 +2,15 @@ package models
 
 import (
 	//"labix.org/v2/mgo"
-	"github.com/HorizontDimension/twiit"
+	//"github.com/HorizontDimension/twiit"
 	"labix.org/v2/mgo/bson"
 	"time"
 )
 
 type Entry struct {
-	Entered   bool
 	EntryTime time.Time
 	CardId    int
-	User      bson.ObjectId
+	Client    bson.ObjectId
 }
 
 type GuestList struct {
@@ -34,15 +33,17 @@ func (g *GuestList) IsOwner(user bson.ObjectId) bool {
 }
 
 func (g *GuestList) AddGuest(guest bson.ObjectId) {
-	twiit.Log.Info("add guest", "guest", guest, "g---->", g)
 
 	if !g.GuestExists(guest) {
 		g.Guests = append(g.Guests, guest)
 
 	}
 
-	twiit.Log.Info("add guest", "guest", guest, "g---->", g)
+}
 
+func (g *GuestList) CheckIn(guest bson.ObjectId, cardid int) {
+	entry := Entry{EntryTime: time.Now(), CardId: cardid, Client: guest}
+	g.Entries = append(g.Entries, entry)
 }
 
 func (g *GuestList) RemoveGuest(guest bson.ObjectId) {
