@@ -38,6 +38,13 @@ func (u Promotor) Register(container *restful.Container) {
 		Operation("CreatePromotor").
 		Reads(models.User{})) // from the request
 
+	ws.Route(ws.POST("/uninviteguest/{guest-id}").To(u.UninviteGuest).
+		// docs
+		Doc("uninvite a guest").
+		Operation("uninviteguest").
+		Param(ws.PathParameter("guest-id", "identifier of the guest").DataType("string")).
+		Reads("event-id")) // from the request
+
 	ws.Route(ws.POST("/inviteguest/{guest-id}").To(u.InviteGuest).
 		// docs
 		Doc("Invite a guest").
@@ -100,6 +107,46 @@ func (p *Promotor) InviteGuest(request *restful.Request, response *restful.Respo
 	}
 	gl := event.GuestlistByOwner(bson.ObjectIdHex(tk.Get("id").(string)))
 	gl.AddGuest(guest.Id)
+	err = event.Save(p.Session)
+
+	twiit.Log.Info("error invite guest", "error", err)
+
+}
+
+//todo validate user input
+func (p *Promotor) UninviteGuest(request *restful.Request, response *restful.Response) {
+	var guestid, eventid string
+
+	guestid = request.PathParameter("guest-id")
+
+	err := request.ReadEntity(&eventid)
+	if err != nil {
+		twiit.Log.Error("Error Reading event-id from request ", "error", err)
+	}
+
+	//validate event
+
+	//get Event
+	event := models.GetEventById(p.Session, eventid)
+	if event == nil {
+		twiit.Log.Warn("Event not found on InviteGuest", "error", err, "eventid", eventid)
+		return
+	}
+	guest := models.GetUserById(p.Session, guestid)
+	if event == nil {
+		twiit.Log.Warn("User not found on InviteGuest", "error", err, "eventid", eventid)
+		return
+	}
+
+	tk, err := twiit.ParseTokenFromReq(request.Request)
+	if err != nil {
+		twiit.Log.Info("error parsing token on inviteguest", "error", err)
+
+	}
+	twiit.Log.Info("events->", "event", event)
+	gl := event.GuestlistByOwner(bson.ObjectIdHex(tk.Get("id").(string)))
+	gl.RemoveGuest(guest.Id)
+
 	err = event.Save(p.Session)
 
 	twiit.Log.Info("error invite guest", "error", err)

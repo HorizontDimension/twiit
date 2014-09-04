@@ -2,9 +2,8 @@ package resources
 
 import (
 	"net/http"
-	"time"
-
 	"strconv"
+	"time"
 
 	"github.com/HorizontDimension/twiit"
 	"github.com/HorizontDimension/twiit/models"

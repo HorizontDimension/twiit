@@ -2,7 +2,7 @@ package models
 
 import (
 	//"labix.org/v2/mgo"
-	//"github.com/HorizontDimension/twiit"
+	"github.com/HorizontDimension/twiit"
 	"labix.org/v2/mgo/bson"
 	"time"
 )
@@ -47,6 +47,7 @@ func (g *GuestList) CheckIn(guest bson.ObjectId, cardid int) {
 }
 
 func (g *GuestList) RemoveGuest(guest bson.ObjectId) {
+	twiit.Log.Info("removing guest", "guest", guest, "guestlist", g.Guests)
 
 	for i := 0; i < len(g.Guests); i++ {
 		if g.Guests[i] == guest {

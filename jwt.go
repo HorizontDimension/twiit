@@ -37,8 +37,14 @@ func (t *Token) Set(key string, value interface{}) {
 		t.token.Claims[key] = value
 	}
 }
-func (t *Token) Generate() (string, error) {
-	return t.token.SignedString(t.key)
+func (t *Token) Generate() (tk string, err error) {
+	tk, err = t.token.SignedString(t.key)
+	if err == nil {
+		CacheAuth.Set(t.Get("id").(string), tk, t.duration)
+
+	}
+
+	return
 }
 
 func ParseToken(toke string) (*Token, error) {
@@ -62,6 +68,10 @@ func ParseToken(toke string) (*Token, error) {
 func ParseTokenFromReq(req *http.Request) (*Token, error) {
 
 	t, err := jwt.ParseFromRequest(req, func(token *jwt.Token) ([]byte, error) {
+		//_, ok := Cache.Get(token.Claims["id"].(string))
+		//if !ok {
+		//		return []byte(""), nil
+		//	}
 
 		//todo implement extra validation
 		return secretKey, nil

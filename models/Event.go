@@ -72,16 +72,19 @@ func (e *Events) CheckInGuest(owner bson.ObjectId, guest bson.ObjectId, cardid i
 func (e *Events) GuestlistByOwner(owner bson.ObjectId) *GuestList {
 	var index int
 	var found = false
+	twiit.Log.Warn("length", "length", len(e.GuestList))
 
-	//if empty guestlist
+	//if empty guestlist lets create a new one
 	if len(e.GuestList) < 1 {
 		e.GuestList = []GuestList{}
 		e.GuestList = append(e.GuestList, *(NewGuestlist(owner, "")))
 		return &e.GuestList[0]
 	}
 
+	//
 	for i := range e.GuestList {
 		if e.GuestList[i].Owner == owner {
+			twiit.Log.Info("match", "g", e.GuestList[i])
 			found = true
 			index = i
 			break
@@ -98,6 +101,8 @@ func (e *Events) GuestlistByOwner(owner bson.ObjectId) *GuestList {
 			}
 		}
 	}
+
+	twiit.Log.Info("guestlist", "guestlist", e.GuestList[index])
 
 	if found {
 		return &e.GuestList[index]

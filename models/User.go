@@ -47,7 +47,7 @@ type User struct {
 	Role           uint8
 	Photo          bson.ObjectId `bson:",omitempty"`
 	Thumb          bson.ObjectId `bson:",omitempty"`
-	HashedPassword []byte
+	HashedPassword []byte        `json:"-"`
 	Tokens         []string
 
 	Pass        string `bson:"-" json:"-"`
@@ -230,6 +230,7 @@ func FindUser(s *mgo.Session, query string, role uint8, limit int) []*User {
 func FindPromotorUsers(s *mgo.Session, query string, owner bson.ObjectId, limit int) []*User {
 	u := &[]*User{}
 	var Query bson.M
+	twiit.Log.Info("find users -> promotor")
 
 	//split the query in words
 	processedQuery := strings.Fields(query)
