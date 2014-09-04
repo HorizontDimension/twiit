@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	session, err := mgo.Dial("192.168.1.104")
+	session, err := mgo.Dial("localhost")
 	if err != nil {
 		panic(err)
 	}
