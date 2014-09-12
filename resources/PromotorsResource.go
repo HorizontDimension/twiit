@@ -105,11 +105,15 @@ func (p *Promotor) InviteGuest(request *restful.Request, response *restful.Respo
 		twiit.Log.Info("error parsing token on inviteguest", "error", err)
 
 	}
+
+	//get guestlist for logged user(must be promotor)
 	gl := event.GuestlistByOwner(bson.ObjectIdHex(tk.Get("id").(string)))
 	gl.AddGuest(guest.Id)
-	err = event.Save(p.Session)
 
-	twiit.Log.Info("error invite guest", "error", err)
+	err = event.Save(p.Session)
+	if err != nil {
+		twiit.Log.Error("Error saving invite guest to DB", "error", err, "eventid", eventid, "guest", tk.Get("id").(string))
+	}
 
 }
 
@@ -143,14 +147,14 @@ func (p *Promotor) UninviteGuest(request *restful.Request, response *restful.Res
 		twiit.Log.Info("error parsing token on inviteguest", "error", err)
 
 	}
-	twiit.Log.Info("events->", "event", event)
+
 	gl := event.GuestlistByOwner(bson.ObjectIdHex(tk.Get("id").(string)))
 	gl.RemoveGuest(guest.Id)
 
 	err = event.Save(p.Session)
-
-	twiit.Log.Info("error invite guest", "error", err)
-
+	if err != nil {
+		twiit.Log.Error("Error saving uninvite guest to DB", "error", err, "eventid", eventid, "guest", tk.Get("id").(string))
+	}
 }
 
 //+admin

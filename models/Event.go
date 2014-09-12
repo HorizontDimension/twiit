@@ -37,6 +37,15 @@ type Events struct {
 	Tokens      []string
 }
 
+func (e *Events) AllGuestsId() []bson.ObjectId {
+
+	result := []bson.ObjectId{}
+	for i := range e.GuestList {
+		result = append(result, (e.GuestList[i].Guests)...)
+	}
+	return result
+}
+
 func (e *Events) HasGuestlist(s *mgo.Session, owner bson.ObjectId) (event *Events) {
 	query := bson.M{"_id": e.Id, "guestlist": bson.M{"$elemMatch": bson.M{"owner": owner}}}
 	err := EventCol(s).Find(query).One(event)
@@ -72,7 +81,7 @@ func (e *Events) CheckInGuest(owner bson.ObjectId, guest bson.ObjectId, cardid i
 func (e *Events) GuestlistByOwner(owner bson.ObjectId) *GuestList {
 	var index int
 	var found = false
-	twiit.Log.Warn("length", "length", len(e.GuestList))
+	//twiit.Log.Warn("length", "length", len(e.GuestList))
 
 	//if empty guestlist lets create a new one
 	if len(e.GuestList) < 1 {
@@ -81,16 +90,17 @@ func (e *Events) GuestlistByOwner(owner bson.ObjectId) *GuestList {
 		return &e.GuestList[0]
 	}
 
-	//
+	//check if owner(promotor) already has a guestlist
 	for i := range e.GuestList {
 		if e.GuestList[i].Owner == owner {
-			twiit.Log.Info("match", "g", e.GuestList[i])
+			//twiit.Log.Info("match", "g", e.GuestList[i])
 			found = true
 			index = i
 			break
 		}
 	}
 
+	//lets add one guestlist assigned to owner
 	if !found {
 		e.GuestList = append(e.GuestList, *(NewGuestlist(owner, "")))
 		for i := range e.GuestList {
@@ -102,11 +112,12 @@ func (e *Events) GuestlistByOwner(owner bson.ObjectId) *GuestList {
 		}
 	}
 
-	twiit.Log.Info("guestlist", "guestlist", e.GuestList[index])
+	//twiit.Log.Info("guestlist", "guestlist", e.GuestList[index])
 
 	if found {
 		return &e.GuestList[index]
 	}
+
 	return nil
 }
 

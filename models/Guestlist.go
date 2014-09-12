@@ -2,11 +2,12 @@ package models
 
 import (
 	//"labix.org/v2/mgo"
-	"github.com/HorizontDimension/twiit"
+	//"github.com/HorizontDimension/twiit"
 	"labix.org/v2/mgo/bson"
 	"time"
 )
 
+//entry represent a gues entry
 type Entry struct {
 	EntryTime time.Time
 	CardId    int
@@ -16,7 +17,7 @@ type Entry struct {
 type GuestList struct {
 	Owner   bson.ObjectId
 	Guests  []bson.ObjectId
-	Entries []Entry
+	Entries []Entry //guest entries (set by doorman)
 }
 
 func NewGuestlist(owner bson.ObjectId, guest bson.ObjectId) (guestlist *GuestList) {
@@ -33,12 +34,10 @@ func (g *GuestList) IsOwner(user bson.ObjectId) bool {
 }
 
 func (g *GuestList) AddGuest(guest bson.ObjectId) {
-
+	//add if not exists
 	if !g.GuestExists(guest) {
 		g.Guests = append(g.Guests, guest)
-
 	}
-
 }
 
 func (g *GuestList) CheckIn(guest bson.ObjectId, cardid int) {
@@ -47,9 +46,8 @@ func (g *GuestList) CheckIn(guest bson.ObjectId, cardid int) {
 }
 
 func (g *GuestList) RemoveGuest(guest bson.ObjectId) {
-	twiit.Log.Info("removing guest", "guest", guest, "guestlist", g.Guests)
 
-	for i := 0; i < len(g.Guests); i++ {
+	for i := range g.Guests {
 		if g.Guests[i] == guest {
 			g.Guests = deleteguest(g.Guests, i)
 			break
@@ -58,8 +56,8 @@ func (g *GuestList) RemoveGuest(guest bson.ObjectId) {
 }
 
 func (g *GuestList) GuestExists(guest bson.ObjectId) bool {
-	for _, g := range g.Guests {
-		if g == guest {
+	for i := range g.Guests {
+		if g.Guests[i] == guest {
 			return true
 		}
 	}

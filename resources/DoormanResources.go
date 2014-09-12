@@ -35,7 +35,49 @@ func (d *Doorman) Register(container *restful.Container) {
 		Param(ws.PathParameter("event-id", "id of the event").DataType("string")).
 		Reads(CheckIn{})) // on the request
 
+	ws.Route(ws.GET("search/guest/{query}").To(d.SearchGuest).
+		// docs
+		Doc("get a Promotor").
+		Operation("GetPromotor").
+		Param(ws.PathParameter("query", "search query").DataType("string")).
+		Writes([]models.User{})) // on the response
+
 	container.Add(ws)
+
+}
+
+func (d *Doorman) SearchGuest(request *restful.Request, response *restful.Response) {
+
+	GuestExists := func(a bson.ObjectId, list []bson.ObjectId) bool {
+		for _, b := range list {
+			if b == a {
+				return true
+			}
+		}
+		return false
+	}
+	query := request.PathParameter("query")
+
+	//get Next/current Event
+	events := models.GetLatestEvents(d.Session, 1)
+	event := events[0]
+
+	var result []*models.User
+
+	//get all clients that match the query
+	matchedGuests := models.FindUser(d.Session, query, models.UserClient, 30)
+	if matchedGuests == nil {
+		response.WriteEntity("[]")
+		return
+	}
+
+	for _, user := range matchedGuests {
+		if GuestExists(user.Id, event.AllGuestsId()) {
+			result = append(result, user)
+		}
+	}
+
+	response.WriteEntity(result)
 
 }
 
@@ -74,7 +116,6 @@ func (d *Doorman) Checkin(request *restful.Request, response *restful.Response) 
 		err = response.WriteErrorString(http.StatusInternalServerError, err.Error())
 		if err != nil {
 			twiit.Log.Error("Error writing response on Checkin ", "error", err)
-
 		}
 		return
 	}
