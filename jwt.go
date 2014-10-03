@@ -1,10 +1,9 @@
 package twiit
 
 import (
+	"github.com/HorizontDimension/jwt-go"
 	"net/http"
 	"time"
-
-	"github.com/HorizontDimension/jwt-go"
 )
 
 var (
@@ -19,7 +18,6 @@ type Token struct {
 }
 
 func NewToken() (t *Token) {
-
 	t = new(Token)
 	t.token = jwt.New(jwt.GetSigningMethod("HS256"))
 	t.duration = duration
@@ -41,9 +39,7 @@ func (t *Token) Generate() (tk string, err error) {
 	tk, err = t.token.SignedString(t.key)
 	if err == nil {
 		CacheAuth.Set(t.Get("id").(string), tk, t.duration)
-
 	}
-
 	return
 }
 
@@ -53,7 +49,6 @@ func ParseToken(toke string) (*Token, error) {
 	t.token = new(jwt.Token)
 	var err error
 	t.token, err = jwt.Parse(toke, func(token *jwt.Token) ([]byte, error) {
-
 		//todo implement extra validation
 		return t.key, nil
 	})
@@ -61,12 +56,10 @@ func ParseToken(toke string) (*Token, error) {
 		Log.Warn("fail to parse jwt token", "error", err)
 		return nil, err
 	}
-
 	return t, nil
 }
 
 func ParseTokenFromReq(req *http.Request) (*Token, error) {
-
 	t, err := jwt.ParseFromRequest(req, func(token *jwt.Token) ([]byte, error) {
 		//_, ok := Cache.Get(token.Claims["id"].(string))
 		//if !ok {

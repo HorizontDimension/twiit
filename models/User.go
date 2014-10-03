@@ -81,7 +81,6 @@ func (u *User) SetPromotor(owner bson.ObjectId) {
 	if !u.alreadyowner(owner) {
 		u.Promotors = append(u.Promotors, owner)
 	}
-
 }
 
 func (u *User) alreadyowner(owner bson.ObjectId) bool {

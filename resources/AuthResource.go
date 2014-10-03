@@ -85,7 +85,7 @@ func RequirePromotor(req *restful.Request, resp *restful.Response, chain *restfu
 	token, err := twiit.ParseTokenFromReq(req.Request)
 	if err != nil {
 		twiit.Log.Warn("Error parsing token ", "error", err)
-		err = resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err = resp.WriteErrorString(http.StatusUnauthorized, "[]")
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequirePromotor ", "error", err)
 
@@ -94,7 +94,7 @@ func RequirePromotor(req *restful.Request, resp *restful.Response, chain *restfu
 	}
 
 	if !token.IsValid() {
-		err = resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err = resp.WriteErrorString(http.StatusUnauthorized, "[]")
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequirePromotor ", "error", err)
 
@@ -107,7 +107,7 @@ func RequirePromotor(req *restful.Request, resp *restful.Response, chain *restfu
 	role := uint8(token.Get("role").(float64))
 
 	if role != models.UserPromotor && role != models.UserAdmin {
-		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "[]")
 
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequirePromotor ", "error", err)
@@ -123,7 +123,7 @@ func RequireAdmin(req *restful.Request, resp *restful.Response, chain *restful.F
 
 	token, err := twiit.ParseTokenFromReq(req.Request)
 	if err != nil {
-		err = resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err = resp.WriteErrorString(http.StatusUnauthorized, "[]")
 
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequireAdmin ", "error", err)
@@ -133,7 +133,7 @@ func RequireAdmin(req *restful.Request, resp *restful.Response, chain *restful.F
 	}
 
 	if !token.IsValid() {
-		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "[]")
 
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequireAdmin ", "error", err)
@@ -144,7 +144,7 @@ func RequireAdmin(req *restful.Request, resp *restful.Response, chain *restful.F
 	}
 	role := token.Get("role").(uint8)
 	if role != models.UserAdmin {
-		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "[]")
 
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequireAdmin ", "error", err)
@@ -169,7 +169,7 @@ func RequireDoorman(req *restful.Request, resp *restful.Response, chain *restful
 		return
 	}
 	if !token.IsValid() {
-		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "[]")
 
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequireDoorman ", "error", err)
@@ -180,7 +180,7 @@ func RequireDoorman(req *restful.Request, resp *restful.Response, chain *restful
 	}
 	role := token.Get("role").(uint8)
 	if role != models.UserGateKeeper && role != models.UserAdmin {
-		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "[]")
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequireDoorman ", "error", err)
 
@@ -196,7 +196,7 @@ func RequireLoggedUser(req *restful.Request, resp *restful.Response, chain *rest
 	if err != nil {
 		twiit.Log.Info("Unable to parse token from request on RequireLoggedUser ", "error", err)
 
-		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "[]")
 
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequireLoggedUser ", "error", err)
@@ -206,7 +206,7 @@ func RequireLoggedUser(req *restful.Request, resp *restful.Response, chain *rest
 	}
 
 	if !token.IsValid() {
-		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "[]")
 
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequireLoggedUser ", "error", err)
@@ -219,7 +219,7 @@ func RequireLoggedUser(req *restful.Request, resp *restful.Response, chain *rest
 
 	if role != models.UserGateKeeper && role != models.UserAdmin && role != models.UserPromotor && role != models.UserClient {
 
-		err := resp.WriteErrorString(http.StatusUnauthorized, "not authorized")
+		err := resp.WriteErrorString(http.StatusUnauthorized, "[]")
 
 		if err != nil {
 			twiit.Log.Error("Error writing response on RequireLoggedUser ", "error", err)

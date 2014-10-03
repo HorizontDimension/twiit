@@ -46,7 +46,6 @@ func (g *GuestList) CheckIn(guest bson.ObjectId, cardid int) {
 }
 
 func (g *GuestList) RemoveGuest(guest bson.ObjectId) {
-
 	for i := range g.Guests {
 		if g.Guests[i] == guest {
 			g.Guests = deleteguest(g.Guests, i)

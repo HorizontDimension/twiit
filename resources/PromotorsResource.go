@@ -115,6 +115,8 @@ func (p *Promotor) InviteGuest(request *restful.Request, response *restful.Respo
 		twiit.Log.Error("Error saving invite guest to DB", "error", err, "eventid", eventid, "guest", tk.Get("id").(string))
 	}
 
+	response.WriteEntity(event)
+
 }
 
 //todo validate user input
@@ -155,6 +157,7 @@ func (p *Promotor) UninviteGuest(request *restful.Request, response *restful.Res
 	if err != nil {
 		twiit.Log.Error("Error saving uninvite guest to DB", "error", err, "eventid", eventid, "guest", tk.Get("id").(string))
 	}
+	response.WriteEntity(event)
 }
 
 //+admin

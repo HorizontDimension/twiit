@@ -60,7 +60,6 @@ func main() {
 		WebServices:    wsContainer.RegisteredWebServices(), // you control what services are visible
 		WebServicesUrl: "http://guestlist.twiit.pt",
 		ApiPath:        "/apidocs.json",
-
 		// Optionally, specifiy where the UI is located
 		SwaggerPath: "/apidocs/",
 		//	SwaggerFilePath: "/root/gocode/src/github.com/HorizontDimension/twiit/swagger-ui/dist",
@@ -90,7 +89,6 @@ func (b *BinaryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//file = "dist/" + file
 
 	w.Header().Set("Content-Type", mimetype)
-
 	data, err := assets.Asset(file)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

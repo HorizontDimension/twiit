@@ -73,6 +73,7 @@ func (d *Doorman) SearchGuest(request *restful.Request, response *restful.Respon
 
 	for _, user := range matchedGuests {
 		if GuestExists(user.Id, event.AllGuestsId()) {
+
 			result = append(result, user)
 		}
 	}
